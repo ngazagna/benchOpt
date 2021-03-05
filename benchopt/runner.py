@@ -223,19 +223,20 @@ def run_one_solver(benchmark, objective, solver, meta,
 
     with exception_handler(tag, pdb=pdb):
         for id_stop_val in range(max_runs):
-            if (-eps <= max(delta_objectives) < eps):
-                # We are on a plateau and the objective is not improving
-                # stop here for the stop_val
-                status = colorify('done', GREEN)
-                break
+            # TODO: add convergence criterion for stochastic loss
+            # if id_stop_val > 20 and sum(delta_objectives[-10:]) > 1:
+            #     # The test error is increasing, stopping here
+            #     status = colorify('done (test error increasing)', YELLOW)
+            #     break
+            # if (-eps <= max(delta_objectives) < eps):
+            #     # We are on a plateau and the objective is not improving
+            #     # stop here for the stop_val
+            #     status = colorify('done', GREEN)
+            #     break
             if max(delta_objectives) < -1e10:
                 # The algorithm is diverging, stopping here
                 status = colorify('diverged', RED)
                 break
-            # TODO: add convergence criterion for stochastic loss
-            # if sum(delta_objectives[-5:]) >= 0:
-            #     # The test error is increasing, stopping here
-            #     break
 
             p = progress(id_stop_val, max(delta_objectives))
             if show_progress:
@@ -356,6 +357,12 @@ def run_benchmark(benchmark, solver_names=None, forced_solvers=None,
                     continue
                 print(f"|--{objective}".ljust(LINE_LENGTH))
                 objective.set_dataset(dataset)
+                try:
+                    compute_loss_on_test = objective.compute_loss_on_test
+                except AttributeError:
+                    # By default the loss is assumed to be computed on the
+                    # train set
+                    compute_loss_on_test = False
 
                 for solver_class in solver_classes:
 
@@ -400,5 +407,10 @@ def run_benchmark(benchmark, solver_names=None, forced_solvers=None,
 
     if plot_result:
         from benchopt.plotting import plot_benchmark
-        plot_benchmark(df, benchmark)
+        if compute_loss_on_test:
+            # TODO: set it to objective curve by default for stochastic objective
+            kinds = ["objective_curve"]
+        else:
+            kinds = None
+        plot_benchmark(df, benchmark, kinds=kinds)
     return df
