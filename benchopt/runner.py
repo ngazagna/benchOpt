@@ -232,6 +232,10 @@ def run_one_solver(benchmark, objective, solver, meta,
                 # The algorithm is diverging, stopping here
                 status = colorify('diverged', RED)
                 break
+            # TODO: add convergence criterion for stochastic loss
+            # if sum(delta_objectives[-5:]) >= 0:
+            #     # The test error is increasing, stopping here
+            #     break
 
             p = progress(id_stop_val, max(delta_objectives))
             if show_progress:
